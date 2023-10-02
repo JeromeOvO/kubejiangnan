@@ -28,6 +28,10 @@ go get k8s.io/client-go@v0.20.4
 >document: https://github.com/kubernetes/client-go
 
 For Frontend
+
+Tech Stack:
+-   vue
+
 ```bash
 npm run dev
 ```
