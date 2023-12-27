@@ -32,7 +32,8 @@ go get k8s.io/client-go@v0.20.4
 ### Pod Management APIs
 
 - NameSpaceList APIs
-- Pod Create 
-- Pod Edit (Update/Upgrade)
+- Pod Create
+- Pod Edit (Update/Upgrade) 
 - Pod View (Details, List)
 - Pod Delete
+

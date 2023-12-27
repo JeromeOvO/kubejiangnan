@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/json"
 	"kubejiangnan/global"
 	pod_req "kubejiangnan/model/pod/request"
 	"kubejiangnan/response"
@@ -12,6 +15,26 @@ import (
 )
 
 type PodApi struct {
+}
+
+// Because the field attributes modified using the update interface are limited,
+// and during the actual modification process, any defined field will be modified
+func (*PodApi) UpdatePod(ctx context.Context, pod *coreV1.Pod) error {
+	// Update
+	_, err := global.KubeConfigSet.CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
+	return err
+}
+
+func (*PodApi) PatchPod(patchData map[string]interface{}, k8sPod *coreV1.Pod, ctx context.Context) error {
+	patchDataBytes, _ := json.Marshal(&patchData)
+	_, err := global.KubeConfigSet.CoreV1().Pods(k8sPod.Namespace).Patch(
+		ctx,
+		k8sPod.Name,
+		types.StrategicMergePatchType,
+		patchDataBytes,
+		metav1.PatchOptions{},
+	)
+	return err
 }
 
 func (*PodApi) CreateOrUpdatePod(c *gin.Context) {
@@ -27,15 +50,10 @@ func (*PodApi) CreateOrUpdatePod(c *gin.Context) {
 		return
 	}
 
-	k8sPod := podConvert.PodReq2K8s(podReq)
-	ctx := context.TODO()
-	if createdPod, err := global.KubeConfigSet.CoreV1().Pods(k8sPod.Namespace).Create(ctx, k8sPod, metav1.CreateOptions{}); err != nil {
-		errMsg := fmt.Sprintf("Pod[%s-%s] Creating Failed, Details: %s", k8sPod.Namespace, k8sPod.Name, err.Error())
-		response.FailWithMessage(c, errMsg)
-		return
+	if msg, err := podService.CreateOrUpdatePod(podReq); err != nil {
+		response.FailWithMessage(c, msg)
 	} else {
-		successMsg := fmt.Sprintf("Pod[%s-%s] Creating Successfully", createdPod.Namespace, createdPod.Name)
-		response.SuccessWithMessage(c, successMsg)
+		response.SuccessWithMessage(c, msg)
 	}
 }
 
