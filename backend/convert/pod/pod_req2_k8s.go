@@ -20,11 +20,11 @@ const (
 	volume_emptyDir = "emptyDir"
 )
 
-type PodConvert struct {
+type Req2K8sConvert struct {
 }
 
 // turn pod request format into k8s struct format
-func (pc *PodConvert) PodReq2K8s(podReq pod_req.Pod) *coreV1.Pod {
+func (pc *Req2K8sConvert) PodReq2K8s(podReq pod_req.Pod) *coreV1.Pod {
 	return &coreV1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podReq.Base.Name,
@@ -46,7 +46,7 @@ func (pc *PodConvert) PodReq2K8s(podReq pod_req.Pod) *coreV1.Pod {
 	}
 }
 
-func (pc *PodConvert) getK8sLabels(podReqLabels []pod_req.ListMapItem) map[string]string {
+func (pc *Req2K8sConvert) getK8sLabels(podReqLabels []pod_req.ListMapItem) map[string]string {
 	podK8sLabels := make(map[string]string)
 	for _, label := range podReqLabels {
 		podK8sLabels[label.Key] = label.Value
@@ -54,7 +54,7 @@ func (pc *PodConvert) getK8sLabels(podReqLabels []pod_req.ListMapItem) map[strin
 	return podK8sLabels
 }
 
-func (pc *PodConvert) getK8sContainers(podReqContainers []pod_req.Container) []coreV1.Container {
+func (pc *Req2K8sConvert) getK8sContainers(podReqContainers []pod_req.Container) []coreV1.Container {
 	podK8sContainers := make([]coreV1.Container, 0)
 	for _, container := range podReqContainers {
 		podK8sContainers = append(podK8sContainers, pc.getK8sContainer(container))
@@ -62,7 +62,7 @@ func (pc *PodConvert) getK8sContainers(podReqContainers []pod_req.Container) []c
 	return podK8sContainers
 }
 
-func (pc *PodConvert) getK8sContainer(podReqContainer pod_req.Container) coreV1.Container {
+func (pc *Req2K8sConvert) getK8sContainer(podReqContainer pod_req.Container) coreV1.Container {
 	return coreV1.Container{
 		Name:            podReqContainer.Name,
 		Image:           podReqContainer.Image,
@@ -84,7 +84,7 @@ func (pc *PodConvert) getK8sContainer(podReqContainer pod_req.Container) coreV1.
 	}
 }
 
-func (pc *PodConvert) getK8sEnv(podReqEnvs []pod_req.ListMapItem) []coreV1.EnvVar {
+func (pc *Req2K8sConvert) getK8sEnv(podReqEnvs []pod_req.ListMapItem) []coreV1.EnvVar {
 	podK8sEnvs := make([]coreV1.EnvVar, 0)
 	for _, env := range podReqEnvs {
 		podK8sEnvs = append(podK8sEnvs, coreV1.EnvVar{
@@ -95,7 +95,7 @@ func (pc *PodConvert) getK8sEnv(podReqEnvs []pod_req.ListMapItem) []coreV1.EnvVa
 	return podK8sEnvs
 }
 
-func (pc *PodConvert) getK8sVolumeMount(podReqVolumeMounts []pod_req.VolumeMount) []coreV1.VolumeMount {
+func (pc *Req2K8sConvert) getK8sVolumeMount(podReqVolumeMounts []pod_req.VolumeMount) []coreV1.VolumeMount {
 	podK8sVolumeMounts := make([]coreV1.VolumeMount, 0)
 	for _, volumeMount := range podReqVolumeMounts {
 		podK8sVolumeMounts = append(podK8sVolumeMounts, coreV1.VolumeMount{
@@ -107,7 +107,7 @@ func (pc *PodConvert) getK8sVolumeMount(podReqVolumeMounts []pod_req.VolumeMount
 	return podK8sVolumeMounts
 }
 
-func (pc *PodConvert) getK8sProbe(podReqProbe pod_req.ContainerProbe) *coreV1.Probe {
+func (pc *Req2K8sConvert) getK8sProbe(podReqProbe pod_req.ContainerProbe) *coreV1.Probe {
 	if !podReqProbe.Enable {
 		return nil
 	}
@@ -147,7 +147,7 @@ func (pc *PodConvert) getK8sProbe(podReqProbe pod_req.ContainerProbe) *coreV1.Pr
 	return &podK8sProbe
 }
 
-func (pc *PodConvert) getK8sResources(podReqSources pod_req.Resources) coreV1.ResourceRequirements {
+func (pc *Req2K8sConvert) getK8sResources(podReqSources pod_req.Resources) coreV1.ResourceRequirements {
 	var podK8sResources coreV1.ResourceRequirements
 	if !podReqSources.Enable {
 		return podK8sResources
@@ -163,7 +163,7 @@ func (pc *PodConvert) getK8sResources(podReqSources pod_req.Resources) coreV1.Re
 	return podK8sResources
 }
 
-func (pc *PodConvert) getK8sPorts(podReqPorts []pod_req.ContainerPort) []coreV1.ContainerPort {
+func (pc *Req2K8sConvert) getK8sPorts(podReqPorts []pod_req.ContainerPort) []coreV1.ContainerPort {
 	podK8sContainedPorts := make([]coreV1.ContainerPort, 0)
 	for _, port := range podReqPorts {
 		podK8sContainedPorts = append(podK8sContainedPorts, coreV1.ContainerPort{
@@ -175,7 +175,7 @@ func (pc *PodConvert) getK8sPorts(podReqPorts []pod_req.ContainerPort) []coreV1.
 	return podK8sContainedPorts
 }
 
-func (pc *PodConvert) getK8sVolumes(podReqVolumes []pod_req.Volume) []coreV1.Volume {
+func (pc *Req2K8sConvert) getK8sVolumes(podReqVolumes []pod_req.Volume) []coreV1.Volume {
 	podK8sVolumes := make([]coreV1.Volume, 0)
 
 	for _, volume := range podReqVolumes {
@@ -194,7 +194,7 @@ func (pc *PodConvert) getK8sVolumes(podReqVolumes []pod_req.Volume) []coreV1.Vol
 	return podK8sVolumes
 }
 
-func (pc *PodConvert) getK8sHostAliases(podReqHostAliases []pod_req.ListMapItem) []coreV1.HostAlias {
+func (pc *Req2K8sConvert) getK8sHostAliases(podReqHostAliases []pod_req.ListMapItem) []coreV1.HostAlias {
 	podK8sHostAliases := make([]coreV1.HostAlias, 0)
 
 	for _, hostAlias := range podReqHostAliases {

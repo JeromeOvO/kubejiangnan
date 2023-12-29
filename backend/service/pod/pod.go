@@ -2,6 +2,7 @@ package pod
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	coreV1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
@@ -9,14 +10,52 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"kubejiangnan/global"
 	pod_req "kubejiangnan/model/pod/request"
+	pod_res "kubejiangnan/model/pod/response"
 	"strings"
 )
 
 type PodService struct {
 }
 
+func (*PodService) DeletePod(namespace string, name string) error {
+	ctx := context.TODO()
+	return global.KubeConfigSet.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
+func (*PodService) GetPodList(namespace string) (_ []pod_res.PodListItem, err error) {
+	ctx := context.TODO()
+	list, err := global.KubeConfigSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		errMsg := fmt.Sprintf("Pod[namespace=%s] Getting Pod List Failed, Details: %s", namespace, err.Error())
+		err = errors.New(errMsg)
+		return
+	}
+
+	podList := make([]pod_res.PodListItem, 0)
+	for _, item := range list.Items {
+		podList = append(podList, podConvert.PodK8s2ItemRes(item))
+	}
+
+	return podList, err
+}
+
+func (*PodService) GetPodDetail(namespace string, name string) (podReq pod_req.Pod, err error) {
+	ctx := context.TODO()
+	podApi := global.KubeConfigSet.CoreV1().Pods(namespace)
+	k8sGetPod, err := podApi.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		errMsg := fmt.Sprintf("Pod[namespace=%s, name=%s] Getting Pod Detail Failed, Details: %s", namespace, name, err.Error())
+		err = errors.New(errMsg)
+		return
+	}
+
+	// turn k8s pod into pod request
+	podReq = podConvert.K8s2ReqConvert.PodK8s2Req(*k8sGetPod)
+	return
+}
+
 func (*PodService) CreateOrUpdatePod(podReq pod_req.Pod) (msg string, err error) {
-	k8sPod := podConvert.PodReq2K8s(podReq)
+	k8sPod := podConvert.Req2K8sConvert.PodReq2K8s(podReq)
 	ctx := context.TODO()
 	// [No]update [No]patch [Yes]delete+create
 	podApi := global.KubeConfigSet.CoreV1().Pods(k8sPod.Namespace)

@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +10,6 @@ import (
 	"kubejiangnan/global"
 	pod_req "kubejiangnan/model/pod/request"
 	"kubejiangnan/response"
-	"net/http"
 )
 
 type PodApi struct {
@@ -57,19 +55,33 @@ func (*PodApi) CreateOrUpdatePod(c *gin.Context) {
 	}
 }
 
-func (*PodApi) GetPodList(c *gin.Context) {
-	ctx := context.TODO()
-	list, err := global.KubeConfigSet.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
+func (*PodApi) GetPodListOrDetail(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Query("name")
+	if name != "" {
+		podDetail, err := podService.GetPodDetail(namespace, name)
+		if err != nil {
+			response.FailWithMessage(c, err.Error())
+			return
+		}
+		response.SuccessWithDetailed(c, "Successfully Get Pod Detail!", podDetail)
+	} else {
+		podList, err := podService.GetPodList(namespace)
+		if err != nil {
+			response.FailWithMessage(c, err.Error())
+			return
+		}
+		response.SuccessWithDetailed(c, "Successfully Get Pod List!", podList)
+	}
+}
 
+func (*PodApi) DeletePod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	err := podService.DeletePod(namespace, name)
 	if err != nil {
-		fmt.Print(err.Error())
+		response.FailWithMessage(c, "Delete Pod Failed, Detail: "+err.Error())
+		return
 	}
-
-	for _, item := range list.Items {
-		fmt.Println(item.Namespace, item.Name)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+	response.SuccessWithMessage(c, "Successfully Delete Pod")
 }
