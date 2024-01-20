@@ -1,0 +1,27 @@
+# mount data in configMap into containers
+apiVersion: v1
+kind: Pod
+
+metadata:
+  name: busybox
+  namespace: test
+  labels:
+    app: busybox
+spec:
+  nodeName: node-1
+  containers:
+    - name: web
+      image: nginx
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
+          hostPort: 8080
+      volumeMounts:
+        - name: workDir
+          mountPath: /usr/share/nginx/html
+  volumes:
+    - name: workDir
+      nfs:
+        server: 44.208.119.243
+        path: /nfs/share
+

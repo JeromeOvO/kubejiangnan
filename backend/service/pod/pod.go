@@ -19,10 +19,15 @@ type PodService struct {
 
 func (*PodService) DeletePod(namespace string, name string) error {
 	ctx := context.TODO()
-	return global.KubeConfigSet.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	background := metav1.DeletePropagationBackground
+	var gracePeriodSeconds int64 = 0
+	return global.KubeConfigSet.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriodSeconds,
+		PropagationPolicy:  &background,
+	})
 }
 
-func (*PodService) GetPodList(namespace string) (_ []pod_res.PodListItem, err error) {
+func (*PodService) GetPodList(namespace string, keyword string) (_ []pod_res.PodListItem, err error) {
 	ctx := context.TODO()
 	list, err := global.KubeConfigSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -33,7 +38,9 @@ func (*PodService) GetPodList(namespace string) (_ []pod_res.PodListItem, err er
 
 	podList := make([]pod_res.PodListItem, 0)
 	for _, item := range list.Items {
-		podList = append(podList, podConvert.PodK8s2ItemRes(item))
+		if strings.Contains(item.Name, keyword) {
+			podList = append(podList, podConvert.PodK8s2ItemRes(item))
+		}
 	}
 
 	return podList, err
@@ -71,8 +78,15 @@ func (*PodService) CreateOrUpdatePod(podReq pod_req.Pod) (msg string, err error)
 			errMsg := fmt.Sprintf("Pod[namespace=%s, name=%s] Updating Failed, Details: %s", k8sPod.Namespace, k8sPod.Name, err.Error())
 			return errMsg, err
 		}
-		// delete
-		err = podApi.Delete(ctx, k8sPod.Name, metav1.DeleteOptions{})
+
+		// delete -- force delete
+		background := metav1.DeletePropagationBackground
+		var gracePeriodSeconds int64 = 0
+		err = podApi.Delete(ctx, k8sPod.Name, metav1.DeleteOptions{
+			GracePeriodSeconds: &gracePeriodSeconds,
+			PropagationPolicy:  &background,
+		})
+
 		if err != nil {
 			errMsg := fmt.Sprintf("Pod[namespace=%s, name=%s] Updating Failed, Details: %s", k8sPod.Namespace, k8sPod.Name, err.Error())
 			return errMsg, err

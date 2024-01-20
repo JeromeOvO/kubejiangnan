@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+
+metadata:
+  name: busybox
+  namespace: test
+  labels:
+    app: busybox
+spec:
+  nodeSelector:
+    test: app
+  containers:
+    - name: busybox
+      image: busybox
+

@@ -8,13 +8,13 @@ const actions = {
   // get user info
   examplePing({ commit, state }) {
     return new Promise((resolve, reject) => {
-        examplePing(state.token).then(response => {
+      examplePing(state.token).then(response => {
         resolve(response)
       }).catch(error => {
         reject(error)
       })
     })
-  }
+  },
 }
 
 export default {

@@ -11,6 +11,7 @@ import (
 const volume_type_emptydir = "emptyDir"
 
 type K8s2ReqConvert struct {
+	volumeMap map[string]string
 }
 
 func (pc *K8s2ReqConvert) PodK8s2ItemRes(pod coreV1.Pod) pod_res.PodListItem {
@@ -108,6 +109,12 @@ func (pc *K8s2ReqConvert) getReqVolumes(volumes []coreV1.Volume) []pod_req.Volum
 			continue
 		}
 
+		if pc.volumeMap == nil {
+			pc.volumeMap = make(map[string]string)
+		}
+
+		pc.volumeMap[volume.Name] = ""
+
 		reqVolumes = append(reqVolumes, pod_req.Volume{
 			Type: volume_type_emptydir,
 			Name: volume.Name,
@@ -201,11 +208,14 @@ func (pc *K8s2ReqConvert) getReqResources(requirements coreV1.ResourceRequiremen
 func (pc *K8s2ReqConvert) getReqContainerVolumeMounts(volumeMounts []coreV1.VolumeMount) []pod_req.VolumeMount {
 	reqVolumeMounts := make([]pod_req.VolumeMount, 0)
 	for _, volumeMount := range volumeMounts {
-		reqVolumeMounts = append(reqVolumeMounts, pod_req.VolumeMount{
-			MountName: volumeMount.Name,
-			MountPath: volumeMount.MountPath,
-			ReadOnly:  volumeMount.ReadOnly,
-		})
+		// filter none empty dir
+		if _, ok := pc.volumeMap[volumeMount.Name]; ok {
+			reqVolumeMounts = append(reqVolumeMounts, pod_req.VolumeMount{
+				MountName: volumeMount.Name,
+				MountPath: volumeMount.MountPath,
+				ReadOnly:  volumeMount.ReadOnly,
+			})
+		}
 	}
 	return reqVolumeMounts
 }
